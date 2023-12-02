@@ -37,6 +37,10 @@ def get_record() -> (bool, str, str):
                     for item in reply['resource_record']:
                         if item['type'] == 'A' and item['host'] == HOST_DOMAIN_TARGET:
                             rid, rip = item['record_id'], item['value']
+            else:
+                logging.error('Get {} record info fail! API reply Error: {}'.format(HOST_DOMAIN_TARGET, reply))
+        else:
+            logging.error('Get {} record info fail! API response Error: {}'.format(HOST_DOMAIN_TARGET, resp.status_code))
     except Exception as e:
         logging.error('Get {} record info fail! Reason: {}'.format(HOST_DOMAIN_TARGET, e))
     return ret, rid, rip
@@ -53,6 +57,10 @@ def add_record(ip) -> str:
             reply = dat['namesilo']['reply']
             if reply['detail'] == 'success':
                 rid = reply['record_id']
+            else:
+                logging.error('Add {}:{} record info fail! API reply Error: {}'.format(HOST_DOMAIN_TARGET, ip, reply))
+        else:
+            logging.error('Add {}:{} record info fail! API response Error: {}'.format(HOST_DOMAIN_TARGET, ip, resp.status_code))
     except Exception as e:
         logging.error('Add {}:{} record info fail! Reason: {}'.format(HOST_DOMAIN_TARGET, ip, e))
     return rid
@@ -69,6 +77,10 @@ def update_record(rid, ip) -> bool:
             reply = dat['namesilo']['reply']
             if reply['detail'] == 'success':
                 ret = True
+            else:
+                logging.error('Update {}:{} record info fail! API reply Error: {}'.format(HOST_DOMAIN_TARGET, ip, reply))
+        else:
+            logging.error('Update {}:{} record info fail! API response Error: {}'.format(HOST_DOMAIN_TARGET, ip, resp.status_code))
     except Exception as e:
         logging.error('Update {}:{} record info fail! Reason: {}'.format(HOST_DOMAIN_TARGET, ip, e))
     return ret
@@ -134,13 +146,15 @@ if __name__ == '__main__':
             sys.exit('Environment variable: CHECK_INTERVAL is Invalid!')
 
     while True:
+        logging.info('{}'.format('=' * 10 + ' RUNNING ' + 10 * '='))
         wan_ip = get_wan_ip()
         if len(wan_ip) > 0:
             result, record_id, record_ip = get_record()
             if result is True:
+                logging.info('Ready Update. wip: {} rip: {} rid: {}'.format(wan_ip, record_ip, record_id))
                 if len(record_id) > 0:
                     if wan_ip != record_ip:
-                        if update_record(record_id, wan_ip):
+                        if update_record(record_id, wan_ip) is True:
                             logging.info('UPDATE {}:{} -> {}'.format(HOST_DOMAIN_TARGET, record_ip, wan_ip))
                 else:
                     record_id = add_record(wan_ip)
